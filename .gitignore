@@ -1,0 +1,20 @@
+# Flutter
+.dart_tool/
+.packages
+build/
+.pub-cache/
+.pub/
+.idea/
+.vscode/
+android/.gradle/
+android/app/build/
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/
+*.log
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
