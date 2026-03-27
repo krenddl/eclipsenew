@@ -79,7 +79,7 @@ class _BottomSearchPageState extends State<BottomSearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF121212),
+      backgroundColor: Color(0xFF121212), 
 
       appBar: AppBar(
         title: TextField(
@@ -88,9 +88,8 @@ class _BottomSearchPageState extends State<BottomSearchPage> {
             filled: true,
             hintText: 'Поиск',
             fillColor: Colors.white10,
-            suffixIcon: IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.search),
+            prefixIcon: Icon(
+              (Icons.search),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(25),
@@ -155,9 +154,7 @@ class _BottomSearchPageState extends State<BottomSearchPage> {
                   final docs = movie?[index];
                   final isFavorite =
                       favoriteIds.contains(docs?['id']);
-                      setState(() {
-                        
-                      });
+
                   return movieTile(context, docs, isFavorite);
                 },
               );
