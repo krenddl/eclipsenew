@@ -97,7 +97,7 @@ class _BottomHomePageState extends State<BottomHomePage> {
                 children: [
                   Text(
                     docs['name'],
-                    maxLines: 1,
+                    maxLines: 3,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: Colors.white,

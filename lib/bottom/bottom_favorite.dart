@@ -21,7 +21,7 @@ class _BottomFavoritePageState extends State<BottomFavoritePage> {
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(docs['name'], maxLines: 1),
+          Text(docs['name'], maxLines: 3),
           EasyStarsRating(
             initialRating: double.parse(docs['stars'].toString()),
             filledColor: Colors.deepPurple,
@@ -42,6 +42,8 @@ class _BottomFavoritePageState extends State<BottomFavoritePage> {
       trailing: IconButton(
         onPressed: () async {
           await favotireTable.deleteFavourite(user_id, docs['id']);
+          setState(() {
+          });
         },
         icon: Icon(
           Icons.bookmark,

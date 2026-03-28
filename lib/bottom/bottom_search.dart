@@ -32,7 +32,7 @@ class _BottomSearchPageState extends State<BottomSearchPage> {
       title: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(docs['name'], maxLines: 1),
+          Text(docs['name'], maxLines: 3),
           EasyStarsRating(
             initialRating: double.parse(docs['stars'].toString()),
             filledColor: Colors.deepPurple,
@@ -60,6 +60,11 @@ class _BottomSearchPageState extends State<BottomSearchPage> {
           } else {
             await favotireTable.addFavourite(user_id, docs);
           }
+          
+
+          setState(() {
+            
+          });
         },
         icon: Icon(
           isFavorite ? Icons.bookmark : Icons.bookmark_border,

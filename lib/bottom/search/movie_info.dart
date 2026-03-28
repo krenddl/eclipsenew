@@ -162,7 +162,7 @@ class _MovieInfoPageState extends State<MovieInfoPage> {
                       ),
                       SizedBox(height: MediaQuery.of(context).size.height * 0.005),
                       EasyStarsRating(
-                        initialRating: _userRating,
+                        initialRating: double.parse(widget.docs['stars'].toString()),
                         filledColor: Colors.deepPurple,
                         emptyColor: Colors.white,
                         onRatingChanged: (rating) {
