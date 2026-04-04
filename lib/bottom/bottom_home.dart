@@ -5,16 +5,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class GenreFilter {
-  const GenreFilter({
-    required this.id,
-    required this.title,
-  });
-
-  final dynamic id;
-  final String title;
-}
-
 class BottomHomePage extends StatefulWidget {
   const BottomHomePage({super.key});
 
@@ -27,10 +17,34 @@ class _BottomHomePageState extends State<BottomHomePage> {
   final FavotireTable favotireTable = FavotireTable();
   final PageController _pageController = PageController(viewportFraction: 0.78);
 
-  late final Future<List<GenreFilter>> _genresFuture = _loadGenres();
-
+  List<dynamic> genreList = [];
+  late Future<List<dynamic>> genresFuture;
   int _currentPage = 0;
-  GenreFilter? _selectedGenre;
+  dynamic selectedGenreId;
+
+  @override
+  void initState() {
+    super.initState();
+    genresFuture = getGenres();
+  }
+
+  Future<List<dynamic>> getGenres() async {
+    final genres = await Supabase.instance.client
+        .from('genre')
+        .select()
+        .order('id');
+    return genres;
+  }
+
+  List<dynamic> filterMovies(List<dynamic> movies) {
+    if (selectedGenreId == null) {
+      return movies;
+    }
+
+    return movies.where((movie) {
+      return movie['id_genre'] == selectedGenreId;
+    }).toList();
+  }
 
   Widget topPoster(BuildContext context, dynamic docs) {
     return GestureDetector(
@@ -52,27 +66,59 @@ class _BottomHomePageState extends State<BottomHomePage> {
     );
   }
 
-  Widget genreChip(GenreFilter genre, {bool selected = false}) {
+  Widget genreButton(dynamic genre) {
+    final genreId = genre['id'];
+    final isSelected = selectedGenreId == genreId;
+
     return GestureDetector(
       onTap: () {
         setState(() {
-          _selectedGenre = genre;
+          selectedGenreId = genreId;
         });
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+      child: Container(
         margin: const EdgeInsets.only(right: 10),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? Colors.deepPurple : Colors.white10,
+          color: isSelected ? Colors.deepPurple : Colors.white10,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: selected ? Colors.deepPurpleAccent : Colors.white12,
+            color: isSelected ? Colors.deepPurpleAccent : Colors.white12,
           ),
         ),
         child: Text(
-          genre.title,
+          genre['name'],
           style: const TextStyle(
+            color: Colors.white,
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget allGenreButton() {
+    final isSelected = selectedGenreId == null;
+
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedGenreId = null;
+        });
+      },
+      child: Container(
+        margin: const EdgeInsets.only(right: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.deepPurple : Colors.white10,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? Colors.deepPurpleAccent : Colors.white12,
+          ),
+        ),
+        child: const Text(
+          'Все',
+          style: TextStyle(
             color: Colors.white,
             fontSize: 13,
           ),
@@ -178,99 +224,6 @@ class _BottomHomePageState extends State<BottomHomePage> {
     );
   }
 
-  Future<List<GenreFilter>> _loadGenres() async {
-    final supabase = Supabase.instance.client;
-    final candidates = ['genre', 'genres', 'category', 'categories'];
-
-    for (final table in candidates) {
-      try {
-        final response = await supabase.from(table).select();
-        if (response is! List || response.isEmpty) {
-          continue;
-        }
-
-        final genres = response.map<GenreFilter?>((item) {
-          if (item is! Map<String, dynamic>) return null;
-
-          final id =
-              item['id'] ??
-              item['genre_id'] ??
-              item['category_id'] ??
-              item['movie_genre_id'];
-          final title =
-              item['name'] ??
-              item['title'] ??
-              item['genre'] ??
-              item['category'];
-
-          if (id == null || title == null) return null;
-
-          final normalizedTitle = title.toString().trim();
-          if (normalizedTitle.isEmpty) return null;
-
-          return GenreFilter(
-            id: id,
-            title: normalizedTitle,
-          );
-        }).whereType<GenreFilter>().toList();
-
-        if (genres.isNotEmpty) {
-          return [
-            const GenreFilter(id: null, title: 'Все'),
-            ...genres,
-          ];
-        }
-      } catch (_) {
-        continue;
-      }
-    }
-
-    return const [GenreFilter(id: null, title: 'Все')];
-  }
-
-  bool _matchesSelectedGenre(dynamic movie) {
-    final selectedGenre = _selectedGenre;
-    if (selectedGenre == null || selectedGenre.id == null) {
-      return true;
-    }
-
-    final selectedId = selectedGenre.id.toString().toLowerCase();
-    final selectedTitle = selectedGenre.title.toLowerCase();
-
-    bool containsValue(dynamic value, String target) {
-      if (value == null) return false;
-
-      if (value is List) {
-        return value.any((item) => containsValue(item, target));
-      }
-
-      if (value is Map) {
-        return value.values.any((item) => containsValue(item, target));
-      }
-
-      return value.toString().toLowerCase() == target;
-    }
-
-    final candidateFields = [
-      movie['genre_id'],
-      movie['genres_id'],
-      movie['category_id'],
-      movie['id_genre'],
-      movie['id_category'],
-      movie['genre'],
-      movie['genres'],
-      movie['category'],
-      movie['categories'],
-    ];
-
-    return candidateFields.any((field) => containsValue(field, selectedId)) ||
-        candidateFields.any((field) => containsValue(field, selectedTitle));
-  }
-
-  List<dynamic> _filterMovies(List<dynamic> movies) {
-    return movies.where(_matchesSelectedGenre).toList();
-  }
-
   @override
   void dispose() {
     _pageController.dispose();
@@ -282,18 +235,18 @@ class _BottomHomePageState extends State<BottomHomePage> {
     return Scaffold(
       backgroundColor: const Color(0xFF120B1E),
       body: SafeArea(
-        child: FutureBuilder<List<GenreFilter>>(
-          future: _genresFuture,
-          builder: (context, genreSnapshot) {
-            final genres =
-                genreSnapshot.data ?? const [GenreFilter(id: null, title: 'Все')];
-
-            if (_selectedGenre == null && genres.isNotEmpty) {
-              _selectedGenre = genres.first;
-            } else if (_selectedGenre != null &&
-                !genres.any((genre) => genre.id == _selectedGenre!.id)) {
-              _selectedGenre = genres.first;
+        child: FutureBuilder(
+          future: genresFuture,
+          builder: (context, snapshotGenre) {
+            if (!snapshotGenre.hasData) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  color: Colors.deepPurple,
+                ),
+              );
             }
+
+            genreList = snapshotGenre.data!;
 
             return StreamBuilder(
               stream: Supabase.instance.client
@@ -316,8 +269,8 @@ class _BottomHomePageState extends State<BottomHomePage> {
                   stream: Supabase.instance.client
                       .from('movie')
                       .stream(primaryKey: ['id']),
-                  builder: (context, snapshot) {
-                    if (!snapshot.hasData) {
+                  builder: (context, snapshotMovie) {
+                    if (!snapshotMovie.hasData) {
                       return const Center(
                         child: CircularProgressIndicator(
                           color: Colors.deepPurple,
@@ -325,7 +278,7 @@ class _BottomHomePageState extends State<BottomHomePage> {
                       );
                     }
 
-                    final movies = snapshot.data!;
+                    final movies = snapshotMovie.data!;
 
                     if (movies.isEmpty) {
                       return const Center(
@@ -336,7 +289,7 @@ class _BottomHomePageState extends State<BottomHomePage> {
                       );
                     }
 
-                    final filteredMovies = _filterMovies(movies);
+                    final filteredMovies = filterMovies(movies);
                     final featuredMovies = movies.take(5).toList();
                     final currentFeaturedMovie = featuredMovies[
                         _currentPage.clamp(0, featuredMovies.length - 1)];
@@ -442,30 +395,15 @@ class _BottomHomePageState extends State<BottomHomePage> {
                             const SizedBox(height: 14),
                             SizedBox(
                               height: 40,
-                              child: genreSnapshot.connectionState ==
-                                      ConnectionState.waiting
-                                  ? const Center(
-                                      child: SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.deepPurple,
-                                        ),
-                                      ),
-                                    )
-                                  : ListView(
-                                      scrollDirection: Axis.horizontal,
-                                      children: genres
-                                          .map(
-                                            (genre) => genreChip(
-                                              genre,
-                                              selected:
-                                                  _selectedGenre?.id == genre.id,
-                                            ),
-                                          )
-                                          .toList(),
-                                    ),
+                              child: ListView(
+                                scrollDirection: Axis.horizontal,
+                                children: [
+                                  allGenreButton(),
+                                  ...genreList.map((genre) {
+                                    return genreButton(genre);
+                                  }),
+                                ],
+                              ),
                             ),
                             const SizedBox(height: 20),
                             if (filteredMovies.isEmpty)
